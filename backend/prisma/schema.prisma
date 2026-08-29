@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  JOB_SEEKER
+  COMPANY
+}
+
+model User {
+  id           String               @id @default(uuid())
+  email        String               @unique
+  password     String
+  name         String
+  role         Role                 @default(JOB_SEEKER)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  jobs         Job[]                @relation("CompanyJobs")
+  applications ApplicationHistory[] @relation("ApplicantHistory")
+}
+
+model Job {
+  id           String               @id @default(uuid())
+  title        String
+  location     String
+  salary       String
+  jobType      String
+  description  String
+  companyId    String
+  company      User                 @relation("CompanyJobs", fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  applications ApplicationHistory[]
+}
+
+model ApplicationHistory {
+  id          String   @id @default(uuid())
+  jobId       String
+  applicantId String
+  status      String   @default("APPLIED")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applicant   User     @relation("ApplicantHistory", fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, applicantId])
+}
